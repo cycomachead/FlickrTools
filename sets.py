@@ -81,31 +81,26 @@ class flickrset(object):
         new_set = {"title":title,"description":description,"sid":sid,"uid":uid,"url":"http://www.flickr.com/photos/" + str(uid) + "/sets/" + str(sid) + "/"}
         flickrset._registry.append(new_set)
        
-    @property
     def title(self,index):
         """returns the set title for a set in the list"""
-        if index > len(_registry)-1:
+        if index > len(flickrset._registry)-1:
                 raise IndexError
         return flickrset._registry[index]["title"]
         
-    @property
     def description(self,index):
         """returns the set description"""
-        if index > len(_registry)-1:
+        if index > len(flickrset._registry)-1:
             raise IndexError
         return flickrset._registry[index]["description"]
 
-    @property
     def sid(self,index):
-        if index > len(_registry)-1:
+        if index > len(flickrset._registry)-1:
             raise IndexError
         return flickrset._registry[index]["sid"]
 
-        
-    @property
-    def url(self,url):
+    def url(self,index):
         """docstring for url"""
-        if index > len(_registry)-1:
+        if index > len(flickrset._registry)-1:
            raise IndexError
         return flickrset._registry[index]["url"]
 
