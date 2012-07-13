@@ -35,7 +35,10 @@ sets = flickr.photosets_getList(user_id=uid)
 	<td><a href="http://www.flickr.com/photos/cycomachead/sets/72157629125152291/">UC Berkeley</a></td>
 </tr>"""
 
-
+# STUFF FOR THE FUTURE
+# Add insane amounts of type checking and error handling because it's good
+# Add some tests
+# Try actually doing TDD! :O
 
 
 #HTML Tags
@@ -109,7 +112,27 @@ class flickrset(object):
            Returns the class list of all sets.
            """
         return flickrset._registry
-
+    
+    def set(self,index):
+        """Like the others, but it returns the whole dict"""
+        if index > len(flickrset._registry)-1:
+           raise IndexError
+        return flickrset._registry[index]
+        
+        # Making the class iterable
+    def __iter__(self):
+        """docstring for __iter__"""
+        return iter(flickrset._registry)
+    
+    def next(self):
+        """docstring for next"""
+        index = 0
+        if index >= len(flickrset._registry):
+            raise StopIteration
+        else:
+            ret = flickrset._registry[index]
+            index += 1
+            return ret
 
 class photo(object):
     """class to represent a set photo
@@ -118,59 +141,155 @@ class photo(object):
     Flikr URL Format:
     http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}_[mstzb].jpg
     
+    This will be implemented very similarly to the flickrset class which means it will have a list which contains dictionaries
+     
     """
-    
     _registry = []
     __metaclass__ = IterRegistry
+    flickr_size = 'q' #this is the large sqaure size I'll use for building thumbs.
     
-    def __init__(self, uid, pid, s=None):
-        self._registry.append(self)
-        self.pid = pid
-        self.set = s
-        self.url = url
-        self.farmid = None
-        self.serverid = None
-        self.secret = None
-        self.size = 'q' 
-        # right now this is the flickr size I want, a 150x105 sq image, but if I set it this way I can change it in the future
+    def __init__(self):
+        """docstring for __init__"""
+        return None
+    
+    def new(self, pid, sid, uid='64724295@N08'):
+        """Doesn't require much, but it does require each photo to be attached to a set."""
+        new_photo = {"pid":pid,"set":sid,"url":None,"farmid":None,"serverid":None,"secret":None}
+        photo._registry.append(new_photo)
+
+        # GETTER METHODS
+        # All take in an index and return the item requested for the dictionary.
         
-    @property
-    def pid(self):
-        return self.pid
+    def pid(self,index):
+        if index > len(photo._registry)-1:
+           raise IndexError
+        return photo._registry[index]["pid"]
+             
+    def url(self,index):
+        if index > len(photo._registry)-1:
+           raise IndexError
+        elif not photo._registry[index]["url"]:
+            raise ValueError("Requested Value Not Present")
+        return photo._registry[index]["url"]
+       
+    def sid(self,index):
+        """returns the sid of the set for which the photo is connected for the purposes of my project"""
+        if index > len(photo._registry)-1:
+           raise IndexError
+        return photo._registry[index]["sid"]
     
-    @property
-    def set(self):
-        return self.set
+    def farmid(self,index):
+        if index > len(photo._registry)-1:
+           raise IndexError
+        elif not photo._registry[index]["farmid"]:
+            raise ValueError("Requested Value Not Present")
+        return photo._registry[index]["farmid"]
+       
+    def secret(self,index):
+        if index > len(photo._registry)-1:
+           raise IndexError
+        elif not photo._registry[index]["secret"]:
+            raise ValueError("Requested Value Not Present")
+        return photo._registry[index]["secret"]
+    
+    def serverid(self,index):
+        if index > len(photo._registry)-1:
+           raise IndexError
+        elif not photo._registry[index]["serverid"]:
+            raise ValueError("Requested Value Not Present")
+        return photo._registry[index]["serverid"]
+       
+    def image(self,index):
+        """Like the others, but it returns the whole dict"""
+        if index > len(photo._registry)-1:
+           raise IndexError
+        return photo._registry[index]
+    
+    def all(self):
+        """returns all the images"""
+        return photo._registry
+    
+        # SETTER METHODS
+        # Setts take in an index (the image) and whatever values are required to build the object
+        # They also return have the option to return the value if by specifying True as the last arg
+        # If I really feel like it, I should have these methods use the getters....
+    
+    def set_farmid(self,index,fid,ret=False):
+        """docstring for set_farmid
+        Takes in an index, the farmid, and sets it.
+        Optionally returns the value too, if the last (optional) arg is false
+        """
+        if index > len(photo._registry)-1:
+           raise IndexError
+        else:
+            photo._registry[index]["farmid"] = fid
+            if ret:
+                return fid
+                
+    def set_serverid(self,index,serverid,ret=False):
+        """docstring for set_serverid
+        Takes in an index, the serverid, and sets it.
+        Optionally returns the value too, if the last (optional) arg is false
+        """
+        if index > len(photo._registry)-1:
+           raise IndexError
+        else:
+            photo._registry[index]["serverid"] = serverid
+            if ret:
+                return serverid
+    
+    def set_secret(self,index,secret,ret=False):
+        """docstring for set_secret
+        Takes in an index, the secret, and sets it.
+        Optionally returns the value too, if the last (optional) arg is false
+        """
+        if index > len(photo._registry)-1:
+           raise IndexError
+        else:
+            photo._registry[index]["secret"] = secret
+            if ret:
+                return secret
+                
+    def set_url(self,index,ret=False):
+        """docstring for set_farmid
+        Takes in an index, and sets the URL based on existing variables.
+        A class size, farmid,serverid,photoid,and secret are REQUIRED for the URL to work.
         
-    @property
-    def url(self):
-        return self.url
+        Optionally returns the value too, if the last (optional) arg is false
+        http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}_[mstzb].jpg
+        """
+        if index > len(photo._registry)-1:
+           raise IndexError
+        img = photo._registry[index]
+        if not photo.flickr_size or not img["farmid"] or not img["serverid"] \
+            or not img["secret"] or not img["pid"]:
+            raise ValueError("One or more of the parameters if missing for the image: Farmid, Serverid, Secret, Photo ID,or Class Size. \n The URL could no be set.")
+        else:
+            new_url = "http://farm" + img["farmid"] + ".staticflickr.com/" + img["serverid"] + "/" + img["pid"] + "_" + img["secret"] + "_" + photo.flickr_size + ".jpg" #PHEW.......        
+            img["url"] = new_url
+            if ret:
+                return img["url"]
     
-    def getset(self):
-        self.set = "SOMETHING"
-        return self.set
-    
-    def geturl(self):
-        self.url = "SOMETHING"
-        return self.url
+# ############################################################################
 
 
 # now here is where I need to do the work to set up a list of sets
 
 
-
+# Create Empty sets and empty images
 all_sets = flickrset()
+all_images = photo()
+#get all sets and put them in the new class
 for item in sets.find('photosets').findall('photoset'):
     #Set init vals: UID, Title, Description, SID
     all_sets.new(item.find('title').text,item.find('description').text,item.attrib['id'])
-    
-print(all_sets.all())
-    
-    
-    
-    
-    
-    
-    
+
+# get the first image for each set and add it to the list
+for s in all_sets:
+        curr_set = flickr.walk_set(s["sid"],) #this doesnt work
+        for i in range(1):
+            # Until I find a better way, I'm going to just use the first photo of each set.
+            # Need to check: Is the sets generator ordered? If not....problems.
+            print(curr_set)
     
     
