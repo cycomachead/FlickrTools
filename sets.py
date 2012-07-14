@@ -1,68 +1,30 @@
 """This file pulls the sets from from flickr for a given user"""
 
 import flickrapi
+import math
+import sys
 
-#my flickr credentials and info
+# my flickr credentials and info
 api_key = '948b85af8b1b9df0a4d38febe7ce75d6'
 api_secret = '2a394b9079033cf8'
 uid = '64724295@N08'
 
-#basic setup for flickr api - which uses a flickr object for all the work
+# basic setup for flickr api - which uses a flickr object for all the work
 flickr = flickrapi.FlickrAPI(api_key,api_secret)
-#photos = flickr.photos_search(user_id=uid, per_page='100')
 sets = flickr.photosets_getList(user_id=uid)
-
-"""<tr>
-	<td>	
-	<div class="setImg">
-		<img class="pho2" src="http://media.tumblr.com/tumblr_m1hfsvRmha1qjg6k8.jpg" alt="Black and White"/>
-		<div class="caption">
-			<p>A collection of Black and White images</p>
-		</div>
-	</div>
-	</td>
-	<td>
-	<div class="setImg">
-		<img class="pho2" src="http://static.tumblr.com/puzghsv/r8km1hg07/_mg_5277_-_version_2.jpg" alt="UC Berkeley"/>
-		<div class="caption">
-			<p>A collection of photos taken at UC Berkeley</p>	
-		</div>
-	</div>
-	</td>
-</tr>
-<tr class="photoslinks">
-	<td><a href="http://www.flickr.com/photos/cycomachead/sets/72157629456632509/">Black and White</a></td>
-	<td><a href="http://www.flickr.com/photos/cycomachead/sets/72157629125152291/">UC Berkeley</a></td>
-</tr>"""
 
 # STUFF FOR THE FUTURE
 # Add insane amounts of type checking and error handling because it's good
 # Add some tests
 # Try actually doing TDD! :O
 
-
-#HTML Tags
-#tags generally follow the structure of the html name followed by
-# b for begin and e for end
-t_begin = """<table style="text-align: middle; margin-right:auto; margin-left: auto;">
-<tbody>"""
-t_end = """</tbody>
-</table>"""
-tre = """</tr>"""
-trb = """<tr class="{0}">""" #either none or 'photoslinks' for like rows
-tdb = """<td>"""
-img = """<img class="{0}" src="{1}" alt="{2}" />""" # pho 2, an image link and the set title
-divb = """<div class="{0}">""" #either setImg or caption
-dive = """</div>"""
-a = """<a href="{0}">{1}</a>""" #link to set and then set title
-p = """<p>{0}</p>""" #set description
-
-table = """"""
-table += t_begin
-
 # THINGS EACH SET NEEDS
 # Title and Caption
 # Set Photo and a link to the set photo
+
+# #############################################################
+# Class Defs.
+
 class IterRegistry(type):
     def __iter__(cls):
         return iter(cls._registry)
@@ -200,7 +162,8 @@ class photo(object):
         return photo._registry[index]["serverid"]
        
     def image(self,index):
-        """Like the others, but it returns the whole dict"""
+        # Note sure this will actually be useful....
+        """Like the others, but it returns the whole dict, based on an index"""
         if index > len(photo._registry)-1:
            raise IndexError
         return photo._registry[index]
@@ -209,6 +172,16 @@ class photo(object):
         """returns all the images"""
         return photo._registry
     
+    def find_sid(self,sid):
+        """docstring for find_sid 
+        Returns the dictionary of the image based on the sid which is input
+        """
+        for img in photo._registry:
+            if img["sid"]==sid:
+                return img
+        raise ValueError("No images from for given sid")
+        
+        
         # SETTER METHODS
         # Setts take in an index (the image) and whatever values are required to build the object
         # They also return have the option to return the value if by specifying True as the last arg
@@ -278,17 +251,18 @@ class photo(object):
     
 # ############################################################################
 
-
 # now here is where I need to do the work to set up a list of sets
-
 
 # Create Empty sets and empty images
 all_sets = flickrset()
 all_images = photo()
-#get all sets and put them in the new class
+# get all sets and put them in the new class
 for item in sets.find('photosets').findall('photoset'):
-    #Set init vals: UID, Title, Description, SID
-    all_sets.new(item.find('title').text,item.find('description').text,item.attrib['id'])
+    # Set init vals: UID, Title, Description, SID
+    exclude = ['Explored!','High School','Photos for Jill','Tumblr Images','New Zealand Trip 2011']
+    t = item.find('title').text
+    if t not in exclude: # exclude sets in the list of ones I don't want. 
+        all_sets.new(t,item.find('description').text,item.attrib['id'])   
 
 # get the first image for each set and add it to the list
 for s in all_sets:
@@ -302,9 +276,113 @@ for s in all_sets:
         # def new(self, pid, sid, farmid, serverid, secret, uid='64724295@N08'):
         all_images.new(cur_img,sid,img.attrib['farm'],img.attrib['server'],img.attrib['secret'])
         
-for i in range(len(all_images._registry)-1):
+for i in range(len(all_images._registry)):
+    # Don't be stupid and try to subtract one from a range function based on len....
     all_images.set_url(i)
     
-print(all_images._registry)
-print(all_sets._registry)
+# ####################################################################
+
+# Setup and Gathering data done. Now to contruct the HTML
+
+"""<tr>
+	<td>	
+	<div class="setImg">
+		<img class="pho2" src="http://media.tumblr.com/tumblr_m1hfsvRmha1qjg6k8.jpg" alt="Black and White"/>
+		<div class="caption">
+			<p>A collection of Black and White images</p>
+		</div>
+	</div>
+	</td>
+	<td>
+	<div class="setImg">
+		<img class="pho2" src="http://static.tumblr.com/puzghsv/r8km1hg07/_mg_5277_-_version_2.jpg" alt="UC Berkeley"/>
+		<div class="caption">
+			<p>A collection of photos taken at UC Berkeley</p>	
+		</div>
+	</div>
+	</td>
+</tr>
+<tr class="photoslinks">
+	<td><a href="http://www.flickr.com/photos/cycomachead/sets/72157629456632509/">Black and White</a></td>
+	<td><a href="http://www.flickr.com/photos/cycomachead/sets/72157629125152291/">UC Berkeley</a></td>
+</tr>
+"""
+
+# HTML Tags
+# tags generally follow the structure of the html name followed by
+# b for begin and e for end
+# trb: either none or 'photoslinks' for like rows
+# img: 0 pho2,  1 an image link and 2 the set title
+# divb: either setImg or caption
+# a: 0 link to set and then 1 set title
+# p: set description
+tags = {"tbegin":"""<table style="text-align: middle; margin-right:auto; margin-left: auto;">
+<tbody>""","tend":"""</tbody>
+</table>""","tre":"""</tr>""","trb":"""<tr class="{0}">""","tdb":"""<td>""","img":"""<img class="{0}" src="{1}" alt="{2}" />""","divb":"""<div class="{0}">""","dive":"""</div>""","a":"""<a href="{0}">{1}</a>""","p":"""<p>{0}</p>""","tde":"""</td>"""}
+
+
+def build_table():
+    """docstring for build_table"""
+    global tags
+    n = "\n"
+    table = """"""
+    table += tags["tbegin"] + n
+    num = len(all_sets._registry)
+    rows = int(math.ceil(num/3))
+    for i in range(1,rows+1):
+        set1 = all_sets.set(i*3-3) if (i*3-3)>num else None
+        set2 = all_sets.set(i*3-2) if (i*3-2)>num else None
+        set3 = all_sets.set(i*3-1) if (i*3-1)>num else None
+        img1 = all_images.find_sid(set1["sid"]) if set1 else None
+        img2 = all_images.find_sid(set2["sid"]) if set2 else None
+        img3 = all_images.find_sid(set3["sid"]) if set3 else None
+        # handle sets rows with images
+        table += tags["trb"].format("") + n
+        if img1:
+            table += tags["tdb"] + n
+            table += tags['divb'].format("setImg") + n
+            table += tags['img'].format("pho2",img1['url'],set1['title']) + n
+            table += tags['divb'].format("caption") + n
+            table += tags['p'].format(set1['description']) + n
+            table += tags['dive'] + n
+            table += tags['dive'] + n
+            table += tags["tde"] + n
+        if img2:
+            table += tags["tdb"] + n
+            table += tags['divb'].format("setImg") + n
+            table += tags['img'].format("pho2",img2['url'],set2['title']) + n
+            table += tags['divb'].format("caption") + n
+            table += tags['p'].format(set2['description']) + n
+            table += tags['dive'] + n
+            table += tags['dive'] + n
+            table += tags["tde"] + n
+        if img3:
+            table += tags["tdb"] + n
+            table += tags['divb'].format("setImg") + n
+            table += tags['img'].format("pho2",img3['url'],set3['title']) + n
+            table += tags['divb'].format("caption") + n
+            table += tags['p'].format(set3['description']) + n
+            table += tags['dive'] + n
+            table += tags['dive'] + n
+            table += tags["tde"] + n
+        table += tags["tre"] + n
+        # handle links rows
+        table += tags['trb'].format("photoslinks") + n
+        if img1:
+            table += tags["tdb"] + n
+            table += tags['a'].format(set1['url'],set1['title']) + n
+            table += tags["tde"] + n
+        if img2:
+            table += tags["tdb"] + n
+            table += tags['a'].format(set2['url'],set2['title']) + n
+            table += tags["tde"] + n
+        if img3:
+            table += tags["tdb"] + n
+            table += tags['a'].format(set3['url'],set3['title']) + n
+            table += tags["tde"] + n
+        table += tags['tre'] + n
     
+    table += tags['tend'] + n
+    sys.stdout.write(table)
+        
+build_table()
