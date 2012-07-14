@@ -152,9 +152,9 @@ class photo(object):
         """docstring for __init__"""
         return None
     
-    def new(self, pid, sid, uid='64724295@N08'):
+    def new(self, pid, sid, farmid, serverid, secret, uid='64724295@N08'):
         """Doesn't require much, but it does require each photo to be attached to a set."""
-        new_photo = {"pid":pid,"set":sid,"url":None,"farmid":None,"serverid":None,"secret":None}
+        new_photo = {"pid":pid,"sid":sid,"url":None,"farmid":farmid,"serverid":serverid,"secret":secret}
         photo._registry.append(new_photo)
 
         # GETTER METHODS
@@ -269,6 +269,12 @@ class photo(object):
             img["url"] = new_url
             if ret:
                 return img["url"]
+                
+    # Making the class iterable
+    def __iter__(self):
+        """docstring for __iter__"""
+        return iter(photo._registry)
+    
     
 # ############################################################################
 
@@ -286,10 +292,19 @@ for item in sets.find('photosets').findall('photoset'):
 
 # get the first image for each set and add it to the list
 for s in all_sets:
-        curr_set = flickr.walk_set(s["sid"],) #this doesnt work
-        for i in range(1):
-            # Until I find a better way, I'm going to just use the first photo of each set.
-            # Need to check: Is the sets generator ordered? If not....problems.
-            print(curr_set)
+        sid = s["sid"]
+        cur_set = flickr.photosets_getPhotos(api_key=api_key,photoset_id=sid)
+        # set the current image to the primary image of each set
+        # img[0].keys()
+        # ['originalsecret', 'isfavorite', 'license', 'views', 'farm', 'media', 'server', 'dateuploaded', 'secret', 'safety_level', 'originalformat', 'rotation', 'id']
+        cur_img = cur_set[0].attrib["primary"]
+        img = flickr.photos_getInfo(api_key=api_key,photo_id=cur_img)[0]
+        # def new(self, pid, sid, farmid, serverid, secret, uid='64724295@N08'):
+        all_images.new(cur_img,sid,img.attrib['farm'],img.attrib['server'],img.attrib['secret'])
+        
+for i in range(len(all_images._registry)-1):
+    all_images.set_url(i)
     
+print(all_images._registry)
+print(all_sets._registry)
     
