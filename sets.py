@@ -333,7 +333,8 @@ def build_table():
     for i in range(1,rows+1):
         set1 = all_sets.set(i*3-3) if (i*3-3)<num else None
         set2 = all_sets.set(i*3-2) if (i*3-2)<num else None
-        set3 = all_sets.set(i*3-1) if (i*3-1)<num else None
+	set3 = None
+        # set3 = all_sets.set(i*3-1) if (i*3-1)<num else None
         img1 = all_images.find_sid(set1["sid"]) if set1 else None
         img2 = all_images.find_sid(set2["sid"]) if set2 else None
         img3 = all_images.find_sid(set3["sid"]) if set3 else None
