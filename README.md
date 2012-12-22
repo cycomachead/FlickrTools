@@ -17,7 +17,7 @@ It currently requires the Python FlickrAPI, and is using 1.4.2, which is
 included in the repo. 
 
 The HTML is simply output to _stdout_, so the easiest way to run it is:
-    python Sets2Table.py > file.html
+    ``` python Sets2Table.py > file.html ```
     
 SOME UPLOADER THING
 ------------------
