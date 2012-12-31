@@ -25,6 +25,7 @@ sets = flickr.photosets_getList(user_id=uid)
 
 # THINGS EACH SET NEEDS
 # Title and Caption
+# if no caption resulting value is "None"
 # Set Photo and a link to the set photo
 
 # #############################################################
@@ -113,15 +114,21 @@ class photo(object):
     """
     _registry = []
     __metaclass__ = IterRegistry
-    flickr_size = 'q' #this is the large sqaure size I'll use for building thumbs.
+    flickr_size = 'q'
+    #this is the large sqaure size I'll use for building thumbs.
 
     def __init__(self):
         """docstring for __init__"""
         return None
 
     def new(self, pid, sid, farmid, serverid, secret, uid='64724295@N08'):
-        """Doesn't require much, but it does require each photo to be attached to a set."""
-        new_photo = {"pid":pid,"sid":sid,"url":None,"farmid":farmid,"serverid":serverid,"secret":secret}
+        """
+        Doesn't require much, but it does require each photo
+        to be attached to a set.
+        """
+        new_photo = { "pid":pid, "sid":sid, "url":None, "farmid":farmid,
+            "serverid":serverid, "secret":secret
+            }
         photo._registry.append(new_photo)
 
         # GETTER METHODS
@@ -140,7 +147,10 @@ class photo(object):
         return photo._registry[index]["url"]
 
     def sid(self,index):
-        """returns the sid of the set for which the photo is connected for the purposes of my project"""
+        """
+        returns the sid of the set for which the photo is connected
+        for the purposes of my project
+        """
         if index > len(photo._registry)-1:
            raise IndexError
         return photo._registry[index]["sid"]
@@ -167,19 +177,22 @@ class photo(object):
         return photo._registry[index]["serverid"]
 
     def image(self,index):
-        # Note sure this will actually be useful....
-        """Like the others, but it returns the whole dict, based on an index"""
+        """
+        Like the others, but it returns the whole dict, based on an index
+        """
         if index > len(photo._registry)-1:
            raise IndexError
         return photo._registry[index]
 
     def all(self):
-        """returns all the images"""
+        """
+        returns all the images
+        """
         return photo._registry
 
     def find_sid(self,sid):
-        """docstring for find_sid
-        Returns the dictionary of the image based on the sid which is input
+        """
+        Returns the dictionary of the image based on the sid
         """
         for img in photo._registry:
             if img["sid"]==sid:
@@ -231,7 +244,8 @@ class photo(object):
     def set_url(self,index,ret=False):
         """docstring for set_farmid
         Takes in an index, and sets the URL based on existing variables.
-        A class size, farmid,serverid,photoid,and secret are REQUIRED for the URL to work.
+        A class size, farmid,serverid,photoid,and secret are REQUIRED
+        for the URL to work.
 
         Optionally returns the value too, if the last (optional) arg is false
         http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}_[mstzb].jpg
@@ -241,9 +255,13 @@ class photo(object):
         img = photo._registry[index]
         if not photo.flickr_size or not img["farmid"] or not img["serverid"] \
             or not img["secret"] or not img["pid"]:
-            raise ValueError("One or more of the parameters if missing for the image: Farmid, Serverid, Secret, Photo ID,or Class Size. \n The URL could no be set.")
+            raise ValueError("One or more of the parameters if missing for \
+            the image: Farmid, Serverid, Secret, Photo ID,or Class Size. \n\
+            The URL could no be set.")
         else:
-            new_url = "http://farm" + img["farmid"] + ".staticflickr.com/" + img["serverid"] + "/" + img["pid"] + "_" + img["secret"] + "_" + photo.flickr_size + ".jpg" #PHEW.......
+            new_url = ("http://farm" + img["farmid"] + ".staticflickr.com/"
+                + img["serverid"] + "/" + img["pid"] + "_" + img["secret"]
+                + "_" + photo.flickr_size + ".jpg") #PHEW.......
             img["url"] = new_url
             if ret:
                 return img["url"]
@@ -264,10 +282,11 @@ all_images = photo()
 # get all sets and put them in the new class
 for item in sets.find('photosets').findall('photoset'):
     # Set init vals: UID, Title, Description, SID
-    exclude = ['Explored!','High School','Photos for Jill','Tumblr Images','New Zealand Trip 2011']
+    exclude = ['Explored!', 'High School', 'Photos for Jill', 'Tumblr Images',
+        'New Zealand Trip 2011']
     t = item.find('title').text
     if t not in exclude: # exclude sets in the list of ones I don't want.
-        all_sets.new(t,item.find('description').text,item.attrib['id'])
+        all_sets.new(t,item.find('description').text, item.attrib['id'])
 
 # get the first image for each set and add it to the list
 for s in all_sets:
@@ -279,7 +298,11 @@ for s in all_sets:
         cur_img = cur_set[0].attrib["primary"]
         img = flickr.photos_getInfo(api_key=api_key,photo_id=cur_img)[0]
         # def new(self, pid, sid, farmid, serverid, secret, uid='64724295@N08'):
-        all_images.new(cur_img,sid,img.attrib['farm'],img.attrib['server'],img.attrib['secret'])
+        all_images.new(
+            cur_img,sid,img.attrib['farm'],
+            img.attrib['server'],
+            img.attrib['secret']
+        )
 
 for i in range(len(all_images._registry)):
     all_images.set_url(i)
@@ -297,7 +320,8 @@ for i in range(len(all_images._registry)):
 # a: 0 link to set and then 1 set title
 # p: set description
 tags = {
-    "tbegin":"""<table style="text-align: middle; margin-right:auto; margin-left: auto;">\n<tbody>""",
+    "tbegin":"""<table style="text-align: middle; margin-right:auto; \
+        margin-left: auto;">\n<tbody>""",
     "tend":"""</tbody>\n</table>""",
     "tre":"""</tr>""",
     "trb":"""<tr class="{0}">""",
@@ -310,7 +334,7 @@ tags = {
     "tde":"""</td>"""
     }
 
-
+# This needs serious refactoring....
 def build_table():
     """Return a string which contains the HTML for the table."""
     global tags
@@ -376,7 +400,10 @@ def build_table():
     table += tags['tend'] + n + """<br /> <br />"""
     return table
 
-precursor = """<p>Here's the place where you'll be able to find links to all of my photos that are online. This is a bit of a small set right now, but please check it out! Images are organized by types and by places where they were taken, and everything is in alphabetical order. :)</p> \n
+precursor = """<p>Here's the place where you'll be able to find links to all of
+ my photos that are online. This is a bit of a small set right now, but please
+ check it out! Images are organized by types and by places where they were
+ taken, and everything is in alphabetical order. :)</p> \n
 """
 
 sys.stdout.write(precursor + build_table())
